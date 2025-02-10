@@ -1,5 +1,6 @@
-'use client';
+"use client";
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface FormData {
   merchantName: string;
@@ -16,8 +17,9 @@ interface ApiResponse {
   merchant?: any;
 }
 
-export default function MerchantForm()  {
-  const companyId = localStorage.getItem("companyId") as string;
+export default function MerchantForm() {
+  const searchParams = useSearchParams();
+  const [companyId, setCompanyId] = useState<string>("");
 
   const initialFormState: FormData = {
     merchantName: "",
@@ -35,11 +37,18 @@ export default function MerchantForm()  {
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    const storedCampaignId = localStorage.getItem("campaignId");
-    if (storedCampaignId) {
-      setFormData(prev => ({ ...prev, campaignId: storedCampaignId }));
+    const storedCompanyId = typeof window !== 'undefined' ? localStorage.getItem("companyId") : null;
+    const campaignId = searchParams.get("campaignId");
+    
+    if (storedCompanyId) {
+      setCompanyId(storedCompanyId);
+      setFormData(prev => ({ 
+        ...prev, 
+        company: storedCompanyId,
+        campaignId: campaignId || ""
+      }));
     }
-  }, []);
+  }, [searchParams]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -110,6 +119,7 @@ export default function MerchantForm()  {
       setFormData({
         ...initialFormState,
         campaignId: formData.campaignId,
+        company: companyId,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error in creating merchant");
@@ -139,6 +149,7 @@ export default function MerchantForm()  {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Rest of your form JSX remains the same */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
@@ -250,5 +261,4 @@ export default function MerchantForm()  {
       </div>
     </div>
   );
-};
-
+}
