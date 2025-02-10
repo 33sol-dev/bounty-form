@@ -19,17 +19,17 @@ interface ApiResponse {
   };
 }
 
-// Separate component that uses useSearchParams
 function MerchantFormContent() {
   const searchParams = useSearchParams();
-  const campaignId = searchParams.get('campaignId');
+  const campaignId = searchParams.get('campaign');
+  const companyId = searchParams.get('company');
 
   const initialFormState: FormData = {
     merchantName: "",
     upiId: "",
     merchantMobile: "",
     merchantEmail: "",
-    company: "",
+    company: companyId || "",
     address: "",
     campaignId: campaignId || "",
   };
@@ -244,24 +244,6 @@ function MerchantFormContent() {
               </div>
             </div>
 
-            <div>
-              <label
-                htmlFor="company"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Company Name *
-              </label>
-              <input
-                type="text"
-                id="company"
-                name="company"
-                value={formData.company}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter company name"
-              />
-            </div>
 
             <div>
               <label
