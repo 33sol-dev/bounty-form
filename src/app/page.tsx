@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import React, { useState, useEffect } from "react";
 
 interface FormData {
   merchantName: string;
@@ -14,21 +14,30 @@ interface FormData {
 
 interface ApiResponse {
   message: string;
-  merchant?: any;
+  merchant?: {
+    id: string;
+  };
 }
 
 export default function MerchantForm() {
   const searchParams = useSearchParams();
-  const [companyId, setCompanyId] = useState<string>("");
+  const campaignId = searchParams.get('campaignId');
+  const companyId = searchParams.get('company')
+
+  useEffect(() => {
+    if (!campaignId) {
+      setError("Campaign ID is required");
+    }
+  }, [campaignId]);
 
   const initialFormState: FormData = {
     merchantName: "",
     upiId: "",
     merchantMobile: "",
     merchantEmail: "",
-    company: companyId,
+    company: companyId || "",
     address: "",
-    campaignId: "",
+    campaignId: campaignId || "",
   };
 
   const [formData, setFormData] = useState<FormData>(initialFormState);
@@ -36,29 +45,17 @@ export default function MerchantForm() {
   const [success, setSuccess] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    const storedCompanyId = typeof window !== 'undefined' ? localStorage.getItem("companyId") : null;
-    const campaignId = searchParams.get("campaignId");
-    
-    if (storedCompanyId) {
-      setCompanyId(storedCompanyId);
-      setFormData(prev => ({ 
-        ...prev, 
-        company: storedCompanyId,
-        campaignId: campaignId || ""
-      }));
-    }
-  }, [searchParams]);
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value.trim(), // Trim whitespace as user types
     }));
+    setError("");
   };
+
 
   const validateForm = (): boolean => {
     if (!formData.merchantName.trim()) {
@@ -98,6 +95,11 @@ export default function MerchantForm() {
     setLoading(true);
 
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_BOUNTY_URL;
+      if (!apiUrl) {
+        throw new Error("API URL is not configured");
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BOUNTY_URL}/api/merchant/create`,
         {
@@ -116,11 +118,7 @@ export default function MerchantForm() {
       }
 
       setSuccess("Merchant created successfully!");
-      setFormData({
-        ...initialFormState,
-        campaignId: formData.campaignId,
-        company: companyId,
-      });
+      setFormData(initialFormState);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error in creating merchant");
     } finally {
@@ -149,7 +147,6 @@ export default function MerchantForm() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Rest of your form JSX remains the same */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
@@ -185,7 +182,7 @@ export default function MerchantForm() {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-md text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter UPI ID"
+                  placeholder="Enter UPI ID (e.g., name@bank)"
                 />
               </div>
             </div>
@@ -205,8 +202,9 @@ export default function MerchantForm() {
                   value={formData.merchantMobile}
                   onChange={handleChange}
                   required
+                  pattern="[0-9]{10}"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter mobile number"
+                  placeholder="Enter 10-digit mobile number"
                 />
               </div>
 
@@ -229,6 +227,7 @@ export default function MerchantForm() {
               </div>
             </div>
 
+
             <div>
               <label
                 htmlFor="address"
@@ -250,7 +249,7 @@ export default function MerchantForm() {
             <div className="pt-6">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !campaignId}
                 className="w-full px-6 py-3 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-colors duration-200"
               >
                 {loading ? "Adding Merchant..." : "Add Merchant"}
