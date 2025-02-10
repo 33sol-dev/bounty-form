@@ -1,6 +1,6 @@
 "use client";
 import { useSearchParams } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState } from "react";
 
 interface FormData {
   merchantName: string;
@@ -19,23 +19,17 @@ interface ApiResponse {
   };
 }
 
-export default function MerchantForm() {
+// Separate component that uses useSearchParams
+function MerchantFormContent() {
   const searchParams = useSearchParams();
   const campaignId = searchParams.get('campaignId');
-  const companyId = searchParams.get('company')
-
-  useEffect(() => {
-    if (!campaignId) {
-      setError("Campaign ID is required");
-    }
-  }, [campaignId]);
 
   const initialFormState: FormData = {
     merchantName: "",
     upiId: "",
     merchantMobile: "",
     merchantEmail: "",
-    company: companyId || "",
+    company: "",
     address: "",
     campaignId: campaignId || "",
   };
@@ -45,17 +39,31 @@ export default function MerchantForm() {
   const [success, setSuccess] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
+  React.useEffect(() => {
+    if (!campaignId) {
+      setError("Campaign ID is required");
+    }
+  }, [campaignId]);
+
+  // Rest of the component logic remains the same
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value.trim(), // Trim whitespace as user types
+      [name]: value.trim(),
     }));
     setError("");
   };
 
+  const validateMobile = (mobile: string): boolean => {
+    return /^\d{10}$/.test(mobile);
+  };
+
+  const validateUPI = (upi: string): boolean => {
+    return /^[\w\.\-]+@[\w\.\-]+$/.test(upi);
+  };
 
   const validateForm = (): boolean => {
     if (!formData.merchantName.trim()) {
@@ -66,8 +74,16 @@ export default function MerchantForm() {
       setError("UPI ID is required");
       return false;
     }
+    if (!validateUPI(formData.upiId)) {
+      setError("Please enter a valid UPI ID");
+      return false;
+    }
     if (!formData.merchantMobile.trim()) {
       setError("Mobile number is required");
+      return false;
+    }
+    if (!validateMobile(formData.merchantMobile)) {
+      setError("Please enter a valid 10-digit mobile number");
       return false;
     }
     if (!formData.company.trim()) {
@@ -101,7 +117,7 @@ export default function MerchantForm() {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BOUNTY_URL}/api/merchant/create`,
+        `${apiUrl}/api/merchant/create`,
         {
           method: "POST",
           headers: {
@@ -187,6 +203,7 @@ export default function MerchantForm() {
               </div>
             </div>
 
+            {/* Rest of the form fields remain the same */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
@@ -227,6 +244,24 @@ export default function MerchantForm() {
               </div>
             </div>
 
+            <div>
+              <label
+                htmlFor="company"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Company Name *
+              </label>
+              <input
+                type="text"
+                id="company"
+                name="company"
+                value={formData.company}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter company name"
+              />
+            </div>
 
             <div>
               <label
@@ -259,5 +294,24 @@ export default function MerchantForm() {
         </div>
       </div>
     </div>
+  );
+}
+
+function FormLoader() {
+  return (
+    <div className="min-h-screen p-4 bg-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading form...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function MerchantForm() {
+  return (
+    <Suspense fallback={<FormLoader />}>
+      <MerchantFormContent />
+    </Suspense>
   );
 }
