@@ -1,6 +1,8 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 import React, { Suspense, useState } from "react";
+import qrcode from "qrcode";
+import { Loader2, Download } from "lucide-react";
 
 interface FormData {
   merchantName: string;
@@ -14,10 +16,24 @@ interface FormData {
 
 interface ApiResponse {
   message: string;
-  merchant?: {
+  merchant: {
     id: string;
+    merchantName: string;
+    merchantCode: string;
+    qrLink: string;
   };
 }
+
+interface MerchantDetails {
+  id: string;
+  merchantName: string;
+  merchantCode: {
+    _id: string;    
+    code: string;
+  };
+  qrLink: string;
+}
+
 
 function MerchantFormContent() {
   const searchParams = useSearchParams();
@@ -38,6 +54,8 @@ function MerchantFormContent() {
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [merchantData, setMerchantData] = useState<ApiResponse["merchant"] | null>(null);
+  // const [isGeneratingQR, setIsGeneratingQR] = useState<boolean>(false);
 
   React.useEffect(() => {
     if (!campaignId) {
@@ -45,7 +63,6 @@ function MerchantFormContent() {
     }
   }, [campaignId]);
 
-  // Rest of the component logic remains the same
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -101,10 +118,60 @@ function MerchantFormContent() {
     return true;
   };
 
+  const generateMerchantQR = async () => {
+    if (!merchantData?.merchantCode) {
+      setError("Merchant code is missing");
+      return;
+    }
+  
+    console.log('Generating QR code...');
+    try {
+      const merchantsResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BOUNTY_URL}/api/merchant/${formData.campaignId}`
+      );
+  
+      if (!merchantsResponse.ok) {
+        throw new Error("Failed to fetch merchants data");
+      }
+  
+      const data = await merchantsResponse.json();
+      
+      const specificMerchant = data.merchants.find(
+        (merchant: MerchantDetails) => merchant.merchantCode._id === merchantData.merchantCode
+      );
+  
+      if (!specificMerchant || !specificMerchant.qrLink) {
+        throw new Error("Merchant QR data not found");
+      }
+  
+      const qrDataUrl = await qrcode.toDataURL(specificMerchant.qrLink, {
+        errorCorrectionLevel: 'H',
+        margin: 1,
+        width: 400
+      });
+  
+      // Create download link
+      const link = document.createElement('a');
+      link.href = qrDataUrl;
+      link.download = `${specificMerchant.merchantName}_qr.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setSuccess("QR code has been downloaded!");
+    } catch (err) {
+      console.error('Error generating QR:', err);
+      setError(err instanceof Error ? err.message : "Failed to generate QR code");
+    } finally {
+      console.log('Finally');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setMerchantData(null);
 
     if (!validateForm()) return;
 
@@ -134,6 +201,7 @@ function MerchantFormContent() {
       }
 
       setSuccess("Merchant created successfully!");
+      setMerchantData(data.merchant || null);
       setFormData(initialFormState);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error in creating merchant");
@@ -203,7 +271,6 @@ function MerchantFormContent() {
               </div>
             </div>
 
-            {/* Rest of the form fields remain the same */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
@@ -244,7 +311,6 @@ function MerchantFormContent() {
               </div>
             </div>
 
-
             <div>
               <label
                 htmlFor="address"
@@ -269,10 +335,29 @@ function MerchantFormContent() {
                 disabled={loading || !campaignId}
                 className="w-full px-6 py-3 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 transition-colors duration-200"
               >
-                {loading ? "Adding Merchant..." : "Add Merchant"}
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin inline-block mr-2 h-4 w-4" />
+                    Adding Merchant...
+                  </>
+                ) : (
+                  "Add Merchant"
+                )}
               </button>
             </div>
           </form>
+
+          {merchantData && (
+            <div className="mt-6">
+              <button
+                onClick={generateMerchantQR}
+                className="w-full px-6 py-3 text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 transition-colors duration-200 flex items-center justify-center"
+              >
+                    <Download className="inline-block mr-2 h-4 w-4" />
+                    Get Your Qr Code
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -283,7 +368,7 @@ function FormLoader() {
   return (
     <div className="min-h-screen p-4 bg-white flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto" />
         <p className="mt-4 text-gray-600">Loading form...</p>
       </div>
     </div>
