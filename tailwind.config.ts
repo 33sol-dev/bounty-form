@@ -12,6 +12,11 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      animation: {
+        "pop-left": "popLeft 0.5s ease-out forwards",
+        "pop-right": "popRight 0.5s ease-out forwards",
+        fall: "fall linear infinite",
+      },
     },
   },
   plugins: [],

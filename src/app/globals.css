@@ -19,3 +19,51 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes popLeft {
+  0% {
+    transform: scale(0) translateX(-100%);
+  }
+  50% {
+    transform: scale(1.2) translateX(20%);
+  }
+  100% {
+    transform: scale(1) translateX(0);
+  }
+}
+
+@keyframes popRight {
+  0% {
+    transform: scale(0) translateX(100%);
+  }
+  50% {
+    transform: scale(1.2) translateX(-20%);
+  }
+  100% {
+    transform: scale(1) translateX(0);
+  }
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-pop-left {
+  animation: popLeft 0.5s ease-out forwards;
+}
+
+.animate-pop-right {
+  animation: popRight 0.5s ease-out forwards;
+}
+
+.animate-fall {
+  animation: fall linear infinite;
+}
+
