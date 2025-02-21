@@ -310,7 +310,7 @@ function MerchantFormContent() {
   return (
     <div className="min-h-screen p-4 bg-[#151823] text-white flex flex-col">
       <div className="max-w-6xl mx-auto w-full mb-8">
-        <h1 className="text-4xl font-bold text-center mb-8 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold text-center mb-2 mt-10 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
           Welcome to Bounty App
         </h1>
       </div>
@@ -417,18 +417,17 @@ function MerchantFormContent() {
         </div>
       </div>
 
-      {/* Success Dialog */}
       {isDialogOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-[#1c1f2e] p-8 rounded-xl shadow-xl max-w-md w-full relative overflow-hidden">
             <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 animate-pulse" />
             </div>
 
             <h3 className="text-2xl font-bold mb-4 text-white relative z-10">Congratulations! 🎉</h3>
             <p className="mb-6 text-gray-300 relative z-10">Your merchant account has been successfully created.</p>
 
-            <div className="bg-[#262837] rounded-lg p-4 mb-6 relative z-10">
+            <div className="rounded-lg p-4 mb-6 relative z-10 shadow-inner">
               <div className="flex justify-center">
                 {qrLoading ? (
                   <div className="w-48 h-48 flex items-center justify-center">
@@ -436,9 +435,9 @@ function MerchantFormContent() {
                   </div>
                 ) : qrDataUrl ? (
                   <img
-                    src={qrDataUrl}
+                    src={qrDataUrl || "/placeholder.svg"}
                     alt="Merchant QR Code"
-                    className="w-48 h-48 object-contain bg-white p-2 rounded-lg"
+                    className="w-48 h-48 object-contain bg-white p-2 rounded-lg transition-all duration-300 hover:scale-105"
                   />
                 ) : (
                   <div className="w-48 h-48 flex items-center justify-center text-gray-400 text-center">
@@ -452,20 +451,16 @@ function MerchantFormContent() {
               <button
                 onClick={generateMerchantQR}
                 disabled={!qrDataUrl || qrLoading}
-                className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[#1c1f2e] disabled:opacity-50 transition-all duration-200"
+                className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[#1c1f2e] disabled:opacity-50 transition-all duration-200 transform hover:scale-105"
               >
-                {qrLoading ? (
-                  <Loader2 className="animate-spin inline-block h-4 w-4" />
-                ) : (
-                  "Download QR Code"
-                )}
+                {qrLoading ? <Loader2 className="animate-spin inline-block h-4 w-4" /> : "Download QR Code"}
               </button>
               <button
                 onClick={() => {
                   setIsDialogOpen(false)
                   setQrDataUrl("")
                 }}
-                className="w-full px-4 py-2 bg-[#262837] text-gray-300 rounded-lg hover:bg-[#2a2d3d] focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-[#1c1f2e] transition-colors duration-200"
+                className="w-full px-4 py-2 bg-[#262837] text-gray-300 rounded-lg hover:bg-[#2a2d3d] focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-[#1c1f2e] transition-all duration-200 transform hover:scale-105"
               >
                 Close
               </button>
